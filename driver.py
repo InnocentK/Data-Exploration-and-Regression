@@ -5,6 +5,9 @@
 ## Description:
 ##		....
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 WINDOWS = "\\"
 UNIX = "/"
 OS = UNIX
@@ -52,6 +55,9 @@ DATA_DICT = {
 	"city-mpg": 11,
 	"highway-mpg": 12
 }
+NUM_CONTIUOUS_VAR = 13
+TOTAL_CARS = 205
+TOTAL_ATRIB = 26
 
 def load(filename = DATASET):
 	file = open(filename, 'r')
@@ -60,34 +66,85 @@ def load(filename = DATASET):
 	data_raw = file.readlines()
 
 	# Seperating data into a 2D list (Rows are the different cars and columns are the attributes for the cars)
-	data = data_raw.strip().split(',')
+	data = [x.strip().split(',') for x in data_raw]
 
 	file.close()
-        print("Data loaded")
+	print("Data loaded")
 	return data
 
 def clean_data(data):
 	
 	cleaned = []
+	target = []
 
 	# Getting the indecies for all the desired car attributes
 	desired_keys = DATA_DICT.keys()
 	desired_indecies = [RAW_DATA_DICT[x] for x in desired_keys]
 
-	for i in data:
-		filtered_line = map(data[i].__getitem__, desired_indecies) #[data[i][j] for j in desired_indecies] 
-		cleaned.append(filtered_line)
+	# Filtering out non-contiuous attributes
+	unknwn_price_cnt = 0
+	removed_data = 0
+	for obj in data:
+		if obj[RAW_DATA_DICT["price"] ] != '?':
+			filtered_line = [obj[i] for i in desired_indecies]
+			filtered_data = []
 
-        print("Data Cleaned")        
-	return cleaned
+			# Converting viable attributes into floats
+			for atrib in filtered_line:
+				if atrib != '?':
+					filtered_data.append( float(atrib) )
+				# If attribute is unknown it is set to zero
+				else:
+					filtered_data.append(0)
+
+			cleaned.append(filtered_data)
+			target.append(float( obj[RAW_DATA_DICT["price"] ] ))
+			removed_data += NUM_CONTIUOUS_VAR
+		else:
+			unknwn_price_cnt += 1
+
+	print("Data points removed for attribute filter:", removed_data,
+			"| Data points removed due to vehicles with unknown prices:", unknwn_price_cnt*TOTAL_ATRIB,
+			"| Remaining datapoints =", (TOTAL_ATRIB*TOTAL_CARS) - (removed_data + unknwn_price_cnt*TOTAL_ATRIB) )
+	print("Data Cleaned")
+	return cleaned, target
+
+def graphPrice2Feature(feature_data, prices, feature):
+	
+	# Setting important variables for plot
+	y = feature_data
+	x = prices
+	yLabel = feature
+	xLabel = "Price"
+	title = "Price as a function of " + feature
+
+	# Creating the plot and placing labels
+	plt.scatter(x, y)
+	plt.title(title)
+	plt.xlabel(xLabel)
+	plt.ylabel(yLabel)
+
+	# Setting custom values for the ticks on the x and y axis
+	xstep = ( max(x) - min(x) ) / 5
+	plt.xticks( np.arange(min(x), max(x)+1, xstep) )
+	ystep = ( max(y) - min(y) ) / 5
+	plt.yticks( np.arange(min(y), max(y)+1, ystep) )
+
+	plt.show()
 
 def main():
 
 	# Reading in and cleaning the data
 	unfiltered_auto_data = load()
-	auto_data = clean_data(unfiltered_auto_data)
+	auto_data, prices = clean_data(unfiltered_auto_data)
 
-	print(auto_data)
+	# Re-organizing the data by feature
+	features = DATA_DICT.keys()
+	feature_data = np.transpose( np.asarray(auto_data, dtype = float) )
+
+	# Plotting Price as a function of the 13 different features
+	for data,feature in zip(feature_data, features):
+		graphPrice2Feature(data, prices, feature)
 
 	return 0
 
