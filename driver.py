@@ -5,7 +5,10 @@
 ## Description:
 ##		....
 
-DATASET = ".\\auto_data\\imports-85.data"
+WINDOWS = "\\"
+UNIX = "/"
+OS = UNIX
+DATASET = "." + OS + "auto_data" + OS + "imports-85.data"
 RAW_DATA_DICT = {
 	"symboling": 0,
 	"normalized-losses": 1,
@@ -60,6 +63,7 @@ def load(filename = DATASET):
 	data = data_raw.strip().split(',')
 
 	file.close()
+        print("Data loaded")
 	return data
 
 def clean_data(data):
@@ -74,6 +78,7 @@ def clean_data(data):
 		filtered_line = map(data[i].__getitem__, desired_indecies) #[data[i][j] for j in desired_indecies] 
 		cleaned.append(filtered_line)
 
+        print("Data Cleaned")        
 	return cleaned
 
 def main():
