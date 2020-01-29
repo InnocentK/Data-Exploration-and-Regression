@@ -7,11 +7,14 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import itertools
 
 WINDOWS = "\\"
 UNIX = "/"
 OS = UNIX
 DATASET = "." + OS + "auto_data" + OS + "imports-85.data"
+PLOTS = "." + OS + "plots" + OS
+
 RAW_DATA_DICT = {
 	"symboling": 0,
 	"normalized-losses": 1,
@@ -109,14 +112,14 @@ def clean_data(data):
 	print("Data Cleaned")
 	return cleaned, target
 
-def graphPrice2Feature(feature_data, prices, feature):
+def graphPair(f1_data, f2_data, feature1, feature2 = "price", showPlot = False):
 	
 	# Setting important variables for plot
-	y = feature_data
-	x = prices
-	yLabel = feature
-	xLabel = "Price"
-	title = "Price as a function of " + feature
+	y = f1_data
+	x = f2_data
+	yLabel = feature1
+	xLabel = feature2
+	title = feature2 + " as a function of " + feature1
 
 	# Creating the plot and placing labels
 	plt.scatter(x, y)
@@ -130,10 +133,18 @@ def graphPrice2Feature(feature_data, prices, feature):
 	ystep = ( max(y) - min(y) ) / 5
 	plt.yticks( np.arange(min(y), max(y)+1, ystep) )
 
-	plt.show()
+	if showPlot:
+		plt.show()
+	else:
+		plt.savefig(PLOTS + feature2 + "_" + feature1 + ".png", bbox_inches='tight')
+		print(feature2, "v.", feature1, "| Plot Saved")
+		plt.close()
+
+	return 0
 
 def main():
 
+	## Question 1A ##
 	# Reading in and cleaning the data
 	unfiltered_auto_data = load()
 	auto_data, prices = clean_data(unfiltered_auto_data)
@@ -142,9 +153,17 @@ def main():
 	features = DATA_DICT.keys()
 	feature_data = np.transpose( np.asarray(auto_data, dtype = float) )
 
+	## Question 1B ##
 	# Plotting Price as a function of the 13 different features
 	for data,feature in zip(feature_data, features):
-		graphPrice2Feature(data, prices, feature)
+		graphPair(data, prices, feature)
+
+	## Question 1D ##
+	# Plotting Pair-wise combinations of the 13 different features
+	combos = list(itertools.combinations(feature_data, 2))
+	combo_names = list(itertools.combinations(features, 2))
+	for pair, names in zip(combos, combo_names):
+		graphPair(pair[0], pair[1], names[0], names[1])
 
 	return 0
 
