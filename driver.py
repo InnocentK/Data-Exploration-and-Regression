@@ -8,6 +8,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import itertools
+from sklearn import linear_model
 
 WINDOWS = "\\"
 UNIX = "/"
@@ -115,10 +116,10 @@ def clean_data(data):
 def graphPair(f1_data, f2_data, feature1, feature2 = "price", showPlot = False):
 	
 	# Setting important variables for plot
-	y = f1_data
-	x = f2_data
-	yLabel = feature1
-	xLabel = feature2
+	x = f1_data
+	y = f2_data
+	xLabel = feature1
+	yLabel = feature2
 	title = feature2 + " as a function of " + feature1
 
 	# Creating the plot and placing labels
@@ -142,6 +143,25 @@ def graphPair(f1_data, f2_data, feature1, feature2 = "price", showPlot = False):
 
 	return 0
 
+def linearT(x):
+	return x
+
+def exp_decay(x):
+	return np.exp(-x)
+
+def regression(feature, response, transformation = linearT):
+
+	x = transformation(feature).reshape(-1, 1)
+	y = response
+
+	model = linear_model.LinearRegression().fit(x,y)
+
+	print("Intercept (B0):", model.intercept_)
+	print("Slope (B1):", model.coef_)
+
+	r2 = model.score(x,y)
+	return r2
+
 def main():
 
 	## Question 1A ##
@@ -153,6 +173,7 @@ def main():
 	features = DATA_DICT.keys()
 	feature_data = np.transpose( np.asarray(auto_data, dtype = float) )
 
+	"""
 	## Question 1B ##
 	# Plotting Price as a function of the 13 different features
 	for data,feature in zip(feature_data, features):
@@ -164,6 +185,19 @@ def main():
 	combo_names = list(itertools.combinations(features, 2))
 	for pair, names in zip(combos, combo_names):
 		graphPair(pair[0], pair[1], names[0], names[1])
+	"""
+	
+	# Performing Linear Regression using 3 different models to see which combination of the 13 features is the best predictor for price
+	## Question 2B ##
+	print()
+	r2_len = regression(feature_data[DATA_DICT["curb-weight"]], prices)
+	print("R^2 for Curb-Weight =", r2_len, '\n')
+	## Question 2C ##
+	r2_esize = regression(feature_data[DATA_DICT["engine-size"]], prices)
+	print("R^2 for Length =", r2_esize, '\n')
+	## Question 2D ##
+	r2_hmpg = regression(feature_data[DATA_DICT["highway-mpg"]], prices)
+	print("R^2 for Length =", r2_hmpg, '\n')
 
 	return 0
 
