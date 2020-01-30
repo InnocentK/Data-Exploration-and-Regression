@@ -1,9 +1,9 @@
-## File: driver.py
+## File: simple_regression.py
 ## Date Created: 01/27/2019
 ## Author: Wambugu "Innocent" Kironji
 ## Class: ECE 580 - Introduction to Machine Learning
 ## Description:
-##		....
+##		Doing a simple regression model of specific automobile data taken from UCI database
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -63,6 +63,7 @@ NUM_CONTIUOUS_VAR = 13
 TOTAL_CARS = 205
 TOTAL_ATRIB = 26
 
+# Loads the data from .dat file into a list
 def load(filename = DATASET):
 	file = open(filename, 'r')
 
@@ -76,6 +77,7 @@ def load(filename = DATASET):
 	print("Data loaded")
 	return data
 
+# Used to remove non-contiuous variables and unknown entries
 def clean_data(data):
 	
 	cleaned = []
@@ -113,14 +115,14 @@ def clean_data(data):
 	print("Data Cleaned")
 	return cleaned, target
 
-def graphPair(f1_data, f2_data, feature1, feature2 = "price", showPlot = False):
+def graphPair(f1_data, f2_data, feature1, feature2 = "price", showPlot = False, add2title = ""):
 	
 	# Setting important variables for plot
 	x = f1_data
 	y = f2_data
 	xLabel = feature1
 	yLabel = feature2
-	title = feature2 + " as a function of " + feature1
+	title = add2title + feature2 + " as a function of " + feature1
 
 	# Creating the plot and placing labels
 	plt.scatter(x, y)
@@ -137,29 +139,55 @@ def graphPair(f1_data, f2_data, feature1, feature2 = "price", showPlot = False):
 	if showPlot:
 		plt.show()
 	else:
-		plt.savefig(PLOTS + feature2 + "_" + feature1 + ".png", bbox_inches='tight')
+		plt.savefig(PLOTS + add2title + feature2 + "_" + feature1 + ".png", bbox_inches='tight')
 		print(feature2, "v.", feature1, "| Plot Saved")
 		plt.close()
 
 	return 0
 
-def linearT(x):
+# Used as a function pointer when not transforming an array
+def noop(x):
 	return x
 
-def exp_decay(x):
-	return np.exp(-x)
+# Creates an offset when using log on special-case zero values
+def zeroLog(a):
+	addition = lambda x: x + 1
+	return np.log( addition(a) )
 
-def regression(feature, response, transformation = linearT):
+# Used to graph Linear Regression Predictions
+def graphPredict(true_price, predict_price, model_no):
 
-	x = transformation(feature).reshape(-1, 1)
+	plt.plot(true_price, true_price, color='g')
+	graphPair(true_price, predict_price, "true price", "predicted price", False, "model #" + model_no + " - ")
+
+# Creates Linear Regression PRedictions (Both simple models and multiple regression models)
+def regression(feature, response, model_no, transform = noop, isSimple = True):
+
+	x = None
 	y = response
 
+	# When only comparing one feature to the response
+	if isSimple:
+		x = transform(feature).reshape(-1, 1)
+	
+	# When no transformations are being used (with multiple features)
+	elif transform == noop:
+		x = np.transpose(feature)
+	
+	# Applying feature-specific transformations (with multiple features)
+	else:
+		x = feature
+		for i,T in enumerate(transform):
+			x[i] = T(x[i])
+		x = np.transpose(feature)
+
 	model = linear_model.LinearRegression().fit(x,y)
+	r2 = model.score(x,y)
+	predicted = model.predict(x)
+	graphPredict(response, predicted, model_no)
 
 	print("Intercept (B0):", model.intercept_)
-	print("Slope (B1):", model.coef_)
-
-	r2 = model.score(x,y)
+	print("Slopes (B1,...,Bn):", model.coef_)
 	return r2
 
 def main():
@@ -173,7 +201,6 @@ def main():
 	features = DATA_DICT.keys()
 	feature_data = np.transpose( np.asarray(auto_data, dtype = float) )
 
-	"""
 	## Question 1B ##
 	# Plotting Price as a function of the 13 different features
 	for data,feature in zip(feature_data, features):
@@ -185,19 +212,27 @@ def main():
 	combo_names = list(itertools.combinations(features, 2))
 	for pair, names in zip(combos, combo_names):
 		graphPair(pair[0], pair[1], names[0], names[1])
-	"""
 	
 	# Performing Linear Regression using 3 different models to see which combination of the 13 features is the best predictor for price
+	
 	## Question 2B ##
 	print()
-	r2_len = regression(feature_data[DATA_DICT["curb-weight"]], prices)
-	print("R^2 for Curb-Weight =", r2_len, '\n')
+	# Regression on Model 1 and Prediction graphing
+	m1_feats = np.array([ feature_data[DATA_DICT["curb-weight"]], feature_data[DATA_DICT["length"]], feature_data[DATA_DICT["horsepower"]] ])
+	r2_m1 = regression(m1_feats, prices, "1", isSimple=False, transform=[noop, np.log, noop])
+	print("R^2 for Model 1 =", r2_m1, '\n')
+	
 	## Question 2C ##
-	r2_esize = regression(feature_data[DATA_DICT["engine-size"]], prices)
-	print("R^2 for Length =", r2_esize, '\n')
+	# Regression on Model 2 and Prediction graphing
+	m2_feats = np.array([ feature_data[DATA_DICT["engine-size"]], feature_data[DATA_DICT["wheel-base"]], feature_data[DATA_DICT["city-mpg"]] ])
+	r2_m2 = regression(m2_feats, prices, "2", isSimple=False, transform=[noop, noop, np.log])
+	print("R^2 for Model 2 =", r2_m2, '\n')
+	
 	## Question 2D ##
-	r2_hmpg = regression(feature_data[DATA_DICT["highway-mpg"]], prices)
-	print("R^2 for Length =", r2_hmpg, '\n')
+	# Regression on Model 3 and Prediction graphing
+	m3_feats = np.array([ feature_data[DATA_DICT["highway-mpg"]], feature_data[DATA_DICT["bore"]], feature_data[DATA_DICT["width"]] ])
+	r2_m3 = regression(m3_feats, prices, "3", isSimple=False, transform=[np.log, noop, noop])
+	print("R^2 for Model 3 =", r2_m3, '\n')
 
 	return 0
 
