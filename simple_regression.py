@@ -225,13 +225,13 @@ def main():
 	## Question 2C ##
 	# Regression on Model 2 and Prediction graphing
 	m2_feats = np.array([ feature_data[DATA_DICT["engine-size"]], feature_data[DATA_DICT["wheel-base"]], feature_data[DATA_DICT["city-mpg"]] ])
-	r2_m2 = regression(m2_feats, prices, "2", isSimple=False, transform=[noop, noop, np.log])
+	r2_m2 = regression(m2_feats, prices, "2", isSimple=False, transform=[noop, noop, np.square])
 	print("R^2 for Model 2 =", r2_m2, '\n')
 	
 	## Question 2D ##
 	# Regression on Model 3 and Prediction graphing
 	m3_feats = np.array([ feature_data[DATA_DICT["highway-mpg"]], feature_data[DATA_DICT["bore"]], feature_data[DATA_DICT["width"]] ])
-	r2_m3 = regression(m3_feats, prices, "3", isSimple=False, transform=[np.log, noop, noop])
+	r2_m3 = regression(m3_feats, prices, "3", isSimple=False, transform=[np.square, noop, noop])
 	print("R^2 for Model 3 =", r2_m3, '\n')
 
 	return 0
